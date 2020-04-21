@@ -20,7 +20,8 @@ def get_mean_std(img_root):
         stds += std
     mean = means / (num * 255)
     std = stds / (num * 255)
-    return mean, std
+    print(mean)
+    print(std)
 
 
 get_mean_std(r'D:\py_pro\CenterNet-PyTorch\data\kalete\JPGImages')
