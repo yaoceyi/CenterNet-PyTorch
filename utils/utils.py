@@ -179,6 +179,7 @@ def post_process(hm, wh, offset, K):
                               y + wh[..., 1] / 2,
                               topk_score,
                               topk_cls.float()], dim=2)
+    # print((detections[:,:,4]>0.3).sum())
     return detections
 
 

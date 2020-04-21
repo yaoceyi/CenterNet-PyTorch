@@ -11,9 +11,9 @@ import torch.nn.functional as F
 class ListDataset(Dataset):
     def __init__(self, data_txt):
         super().__init__()
-        # 均值和方差是需要对训练集计算得来的.数据集不同,值也不同
-        self.mean = np.array([0.8292903, 0.74784886, 0.80975633], dtype=np.float32)
-        self.std = np.array([0.1553852, 0.20757463, 0.16293081], dtype=np.float32)
+        # 均值和方差是需要对训练集计算得来的.数据集不同,值也不同,kalete
+        self.mean = np.array([0.4655749, 0.37791564, 0.3431137], dtype=np.float32)
+        self.std = np.array([0.31960478, 0.25687846, 0.21592382], dtype=np.float32)
         # 一张图片中最多有多少个标注目标,这里可以根据具体任务场景灵活设置,原始值是50.我这里修改为20
         self.max_objs = 20
         with open(data_txt) as f:
