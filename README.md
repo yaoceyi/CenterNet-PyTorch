@@ -9,7 +9,8 @@ train.py进行训练
 
 主干网络使用的是resnet系列,没有DCN也不需要任何编译.且在Window环境下.
 
-使用VOC数据集格式进行训练的,对数据准备部分进行了修改.
+使用VOC数据集格式进行训练的,对数据准备部分进行了修改.只要在data/kalete文件夹下中的Annotations准备xml文件,JPGImages准备JPG文件.
+然后运行xm2txt即可.训练集:验证集=9:1
 
 添加了mAP计算,但是好像中间出了某些问题导致无法正常计算.但是loss是正常下降的
 
