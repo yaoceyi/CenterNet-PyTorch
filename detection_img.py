@@ -26,7 +26,7 @@ if __name__ == '__main__':
         with torch.no_grad():
             a = time.time()
             hm, wh, offset = model(input_imgs)
-            print(" 检测耗时:  ", (time.time()-a)*1000)
+            print("forward耗时:  ", (time.time()-a)*1000)
             results = post_process(hm, wh, offset, 50)
         imgs.extend(img_paths)
         img_detections.extend(results)
@@ -36,9 +36,7 @@ if __name__ == '__main__':
         w, h = img.size
         font = ImageFont.truetype(font='font/FiraMono-Medium.otf', size=16)
         if detections is not None:
-            # 在画图阶段需要转换一下坐标形式
-            # detections = xywh2xyxy(detections)
-            # 先将xyxy相对坐标转换成max(600,800)下的坐标
+            # 先将网络输入尺寸下的坐标转换成max(w, h)下的坐标
             detections[:, :4] *= max(h, w) / cfg.input_size
             # 如果h<w,则是一个宽边图,需要在y轴上减去(w - h) / 2,下同
             if h < w:
