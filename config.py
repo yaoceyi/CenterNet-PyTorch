@@ -12,7 +12,6 @@ class Config:
         # 进行数据预处理时的均值和方差,每个任务场景都不相同.需要分别计算
         self.mean = [0.8292903, 0.74784886, 0.80975633]
         self.std = [0.1553852, 0.20757463, 0.16293081]
-        self.max_object = 20  # 一张图里最多有多少个目标，可以设大，不能设小
         self.input_size = 512   # 网络输入尺寸
         self.train_txt = r'D:\py_pro\CenterNet-PyTorch\data\kalete\\train.txt'   # 训练集路径
         self.val_txt = r'D:\py_pro\CenterNet-PyTorch\data\kalete\\val.txt'   # 验证集路径
