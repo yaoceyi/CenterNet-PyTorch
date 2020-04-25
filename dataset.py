@@ -6,14 +6,12 @@ from config import cfg
 import torchvision.transforms as transforms
 from PIL import Image
 import torch.nn.functional as F
+import glob
 
 
-class ListDataset(Dataset):
+class TrainDataset(Dataset):
     def __init__(self, data_txt):
         super().__init__()
-        # 均值和方差是需要对训练集计算得来的.数据集不同,值也不同,kalete
-        self.mean = np.array([0.4655749, 0.37791564, 0.3431137], dtype=np.float32)
-        self.std = np.array([0.31960478, 0.25687846, 0.21592382], dtype=np.float32)
         # 一张图片中最多有多少个标注目标,这里可以根据具体任务场景灵活设置,原始值是50.我这里修改为20
         self.max_objs = 20
         with open(data_txt) as f:
@@ -45,7 +43,7 @@ class ListDataset(Dataset):
         img, pad, max_side = pad_to_square(img, 0)
         # 将图片resize到网络输入大小
         img = F.interpolate(img.unsqueeze(0), size=(cfg.input_size, cfg.input_size), mode="nearest").squeeze(0)
-        inp = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(img)
+        inp = transforms.Normalize(mean=cfg.mean, std=cfg.std)(img)
 
         output_h = cfg.input_size // 4
         output_w = cfg.input_size // 4
@@ -100,9 +98,6 @@ class ListDataset(Dataset):
 class EvalDataset(Dataset):
     def __init__(self, data_txt):
         super().__init__()
-        # 均值和方差是需要对训练集计算得来的.数据集不同,值也不同
-        self.mean = np.array([0.8292903, 0.74784886, 0.80975633], dtype=np.float32)
-        self.std = np.array([0.1553852, 0.20757463, 0.16293081], dtype=np.float32)
         # 一张图片中最多有多少个标注目标,这里可以根据具体任务场景灵活设置,原始值是50.我这里修改为20
         with open(data_txt) as f:
             self.path_id_box = f.readlines()
@@ -114,17 +109,15 @@ class EvalDataset(Dataset):
         """
         :param index: 随机索引
         :return: inp:3*512*512的图片       torch.Size([3, 512, 512])
-
         """
         path_id_box = self.path_id_box[index].split()
         img_path = path_id_box.pop(0)
-        # ToTensor这一步已经包含了归一化(1/255.0)  额外转换成RGB是为了防止 PNG等格式图片有四通道
         img = transforms.ToTensor()(Image.open(img_path).convert("RGB"))
         # 将图片填充至方形,并计算出pad在各个方向上的填充长度
         img, pad, max_side = pad_to_square(img, 0)
         # 将图片resize到网络输入大小
         img = F.interpolate(img.unsqueeze(0), size=(cfg.input_size, cfg.input_size), mode="nearest").squeeze(0)
-        inp = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(img)
+        inp = transforms.Normalize(mean=cfg.mean, std=cfg.std)(img)
 
         id_box = ' '.join(path_id_box)
         id_box = np.fromstring(id_box, dtype=np.float32, sep=' ').reshape(-1, 5)
@@ -136,3 +129,20 @@ class EvalDataset(Dataset):
         # 将再不规则尺寸下的坐标转换为网络输入尺寸下的坐标形式,方便后面计算mAP
         neat_box[:id_box.shape[0],:] = (id_box[:, 1:]+pad)/max_side*cfg.input_size
         return inp, neat_box, neat_id
+
+
+class ImageFolder(Dataset):
+    # 这个是为了最终测试阶段准备的数据集格式
+    def __init__(self, folder_path):
+        self.files = sorted(glob.glob("%s/*.*" % folder_path))
+
+    def __getitem__(self, index):
+        img_path = self.files[index]
+        img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
+        img, pad, max_side = pad_to_square(img, 0)
+        img = F.interpolate(img.unsqueeze(0), size=(cfg.input_size, cfg.input_size), mode="nearest").squeeze(0)
+        inp = transforms.Normalize(mean=cfg.mean, std=cfg.std)(img)
+        return img_path, inp
+
+    def __len__(self):
+        return len(self.files)

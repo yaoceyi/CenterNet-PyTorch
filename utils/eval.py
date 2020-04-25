@@ -1,6 +1,5 @@
 import torch
 from tqdm import tqdm
-from torch.utils.data import DataLoader
 from collections import defaultdict
 import numpy as np
 from config import cfg
@@ -21,9 +20,11 @@ def Eval(model, test_loader):
             hm, wh, offset = model(inp.cuda())
             results = post_process(hm, wh, offset, 50)
             for i, result in enumerate(results):
-                pred_boxes = result[:, :4].to('cpu').numpy()
-                pred_scores = result[:, 4].to('cpu').numpy()
-                pred_labels = result[:, 5].to('cpu').numpy()
+                # 获取分类概率大于0.3的 key point
+                keep_index = result[:, 4] > 0.3
+                pred_boxes = result[keep_index, :4].to('cpu').numpy()
+                pred_scores = result[keep_index, 4].to('cpu').numpy()
+                pred_labels = result[keep_index, 5].to('cpu').numpy()
                 # 根据原始输入图像尺寸转换成绝对坐标
                 nozero_index = np.mean(gt_boxes[i], axis=1) > 10
                 gt_box = gt_boxes[i][nozero_index]
@@ -54,8 +55,6 @@ def calc_pr(pred_boxes, pred_labels, pred_scores, gt_boxes, gt_labels):
                                                                   gt_labels):
         # 每张测试图片中预测的情况,这里只针对测试集中出现的label进行计算mAP
         for l in np.unique(gt_label):
-            # if l == 0:
-            #     continue
             # 每张测试图片中l类上的预测数据
             pred_mask_l = pred_label == l
             pred_box_l = pred_box[pred_mask_l]

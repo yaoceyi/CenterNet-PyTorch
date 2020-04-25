@@ -53,13 +53,13 @@ class FocalLoss(torch.nn.Module):
         num_pos = pos_inds.float().sum()
         pos_loss = pos_loss.sum()
         neg_loss = neg_loss.sum()
-
         # loss要除以gt里的目标数，如果gt目标数为0，那就除以1 因为 log函数在 0~1区间内都为负数,所以在loss前加了负号
         # 有一点疑问,按理说求loss时应该计算均值,但是else下面只除以num_pos,虽然作者论文中也是这个意思.但是不太明白为什么这样做...
         if num_pos == 0:
             loss = neg_loss
         else:
             loss = (pos_loss + neg_loss) / num_pos
+
         return loss
 
 
@@ -70,7 +70,7 @@ class CenterLoss(torch.nn.Module):
         self.l1_loss = RegL1Loss()
 
     def forward(self, output, hm, true_mask, ind, wh, offset):
-        """                 hm                              wh                          off
+        """                 pred_hm                                 pred_wh                 pred_offset
         :param output: (tensor([2, num_cls, 128, 128]), tensor([2, 2, 128, 128]), tensor([2, 2, 128, 128]))
         :param hm:          tensor([2, num_cls, 128, 128]
         :param true_mask:   tensor([2, max_obj]
@@ -79,18 +79,16 @@ class CenterLoss(torch.nn.Module):
         :param offset:      tensor([2, max_obj, 2]
         :return:
         """
-        # sigmoid,并限制热力图的数值范围
         pred_hm, pred_wh, pred_off = output
-        hm = torch.clamp(pred_hm, min=1e-4, max=1 - 1e-4)
+        # 限制热力图的数值范围
+        pred_hm = torch.clamp(pred_hm, min=1e-4, max=1 - 1e-4)
         # 构建hm_loss层、wh_loss层、off_loss层
         hm_loss = self.focal_loss(pred_hm, hm)
 
         wh_loss = self.l1_loss(pred_wh, true_mask, ind, wh)
         off_loss = self.l1_loss(pred_off, true_mask, ind, offset)
 
-        loss = hm_loss + 0.1 * wh_loss + off_loss
+        total_loss = hm_loss + 0.1 * wh_loss + off_loss
 
-        # 用来显示各种loss是多少
-        loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'wh_loss': wh_loss, 'off_loss': off_loss}
-        return loss_stats
+        return total_loss, hm_loss, wh_loss, off_loss
 

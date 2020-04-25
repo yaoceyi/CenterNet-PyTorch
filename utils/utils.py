@@ -173,13 +173,13 @@ def post_process(hm, wh, offset, K):
     y = topk_ys + offset[:, :, 1]
 
     wh = _transpose_and_gather_feat(wh, topk_inds)
-    detections = torch.stack([x - wh[..., 0] / 2,
-                              y - wh[..., 1] / 2,
-                              x + wh[..., 0] / 2,
-                              y + wh[..., 1] / 2,
+    # 对预测的坐标转换为在网路输入尺寸下的坐标形式
+    detections = torch.stack([(x - wh[..., 0] / 2) * 4,
+                              (y - wh[..., 1] / 2) * 4,
+                              (x + wh[..., 0] / 2) * 4,
+                              (y + wh[..., 1] / 2) * 4,
                               topk_score,
                               topk_cls.float()], dim=2)
-    # print((detections[:,:,4]>0.3).sum())
     return detections
 
 
